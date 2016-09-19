@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * @file
+ * Section Change Custom Module.
+ */
+
+/**
+ * Change alias in id.
+ *
+ * @param $alias {string}
+ *
+ * @return id {string}
+ */
+function change_alias_to_id($alias) {
+  $alias = ltrim($alias, "\/");
+  $id = explode('[/#]', $alias);
+  return end($id);
+}
+
+/**
+ * Implements template_preprocess_views_view_fields().
+ */
+function section_change_preprocess_views_view_fields(&$vars) {
+  $nid = $vars['row']->nid;
+  $metatags = metatag_metatags_load('node', $nid);
+  $alias = drupal_get_path_alias('node/' . $nid);
+  $vars['metatag_id'] = change_alias_to_id($alias);
+  if ($metatags) {
+    $vars['metatag_title'] = $metatags[LANGUAGE_NONE]['title']['value'];
+    $vars['metatag_description'] = $metatags[LANGUAGE_NONE]['description']['value'];
+  }
+}
+
+/**
+ * Implements template_preprocess_views_view().
+ */
+function section_change_preprocess_views_view(&$vars) {
+  $path_to_module = drupal_get_path('module', 'section_change');
+
+  drupal_add_css($path_to_module . '/css/style.css');
+  drupal_add_js($path_to_module . '/js/section_change.js', array('type' => 'file', 'scope' => 'footer'));
+}
