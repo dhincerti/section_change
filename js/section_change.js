@@ -1,7 +1,6 @@
 /**
- * @file
- * Section change.
- *
+ * @file Section change.
+ * 
  * Implements script to change metadata and title dinamically.
  */
 
@@ -11,253 +10,332 @@
    * views-view-fields.tpl.php and template.php for info about the classes used.
    */
 
-  var currentSection = '';
-  var bodyScrollElement = 'html, body';
-  var animationTime = 500;
+  $.fn.sectionChange = function(options) {
 
-  $(document).ready(function() {
-    setScrollRestoration('manual');
-    setBodyScrollElement();
-  });
+    var defaults = {
+      onlyHash : false,
+      dataSectionName : 'section',
+      viewsClass : '.views-row',
+      animationTime : 500,
+      discount : 0,
+      ignore : '',
+      linksSelector : '',
+    };
 
-  $(window).load(function() {
-    goToActiveSection(getHeaderHeight());
+    var settings = $.extend({}, defaults, options);
+    var viewName = '';
+    var pathName = '';
+    var currentSection = '';
+    var bodyScrollElement = 'html, body';
 
-    // TODO setTimeout is been used to avoid the scroll hendler,
-    // before we go to some section when page loads.
-    // This was a bug on Safari IOS.
-    // See if we can remove timeout and fix it with another approach.
-    setTimeout(function() {
-      changePageMetaDataOnScoll();
-      changePageMetaDataOnPopstate();
-      changePageMetaDataOnMenuClick();
-    }, animationTime);
-  });
-
-  /**
-   * Select the right element to scroll based on webkit user agent.
-   * 
-   * @see http://harmssite.com/2013/08/jquery-animate-body-for-all-browsers/
-   * 
-   * @returns {string}
-   */
-  function setBodyScrollElement() {
-    bodyScrollElement = (navigator.userAgent.toLowerCase().indexOf('webkit') > 0 ? 'body' : 'html');
-  }
-
-  /**
-   * Splits the hash character '#' and returns only the real name of the
-   * section.
-   * 
-   * @param {string} hash - The hash to be splitted
-   * 
-   * @returns {string}
-   */
-  function getSectionByHash(hash) {
-    return hash.split('#')[1]
-  }
-
-  /**
-   * Get section name based on path. Actualy we get this based on hash. If your
-   * project will use only path, this need to be changed.
-   * 
-   * @returns {string}
-   */
-  function getSectionByPath() {
-    return getSectionByHash(window.location.href);
-  }
-
-  /**
-   * Finds the section element based on path.
-   * 
-   * @param {string} hash - The section hash
-   * 
-   * @returns {jQuery object}
-   */
-  function getSectionObjectByHash(hash) {
-    return $("[data-section='" + getSectionByHash(hash) + "']");
-  }
-
-  /**
-   * Finds the section element based on path.
-   * 
-   * @returns {jQuery object}
-   */
-  function getSectionObjectByPath() {
-    return $("[data-section='" + getSectionByPath() + "']");
-  }
-
-  function isNotSection(view) {
-    return $(view).find('.among-children').length > 0 ? true : false;
-  }
-
-  function getSectionByView(view) {
-    return $(view).find('.background-section').data("section");
-  }
-
-  function getSectionPathname(id) {
-    var pathname = window.location.pathname.split("/");
-    if (getSectionByView($('.views-row-1')) == getSectionByHash(id)) {
-      return " ";
-    }
-    return pathname[1] + id;
-  }
-
-  function getViewBySection(section) {
-    if (typeof section === 'undefined') {
-      section = $('');
-    }
-
-    var view = section.closest('.views-row');
-    if (view.length < 1) {
-      view = $('.views-row').first();
-    }
-    return view;
-  }
-
-  function getActiveView() {
-    var section = getSectionObjectByPath();
-    return getViewBySection(section);
-  }
-
-  function getHeaderHeight() {
-    return $('#navbar').outerHeight();
-  }
-
-  /**
-   * An specific size from Project.
-   * 
-   * @returns int
-   */
-  function getScrollDeltaSize() {
-    return getHeaderHeight() + 1;
-  }
-
-  function getWindowScroll() {
-    return $(document).scrollTop() + getScrollDeltaSize();
-  }
-
-  function isInNewSection(element) {
-    var scroll = getWindowScroll();
-    var section = getSectionByView(element);
-    var top = element.offset().top;
-    var bottom = top + element.height();
-    if (scroll >= top && scroll <= bottom && section != currentSection && !isNotSection(element)) {
-      currentSection = section;
-      return true;
-    }
-    return false;
-  }
-
-  function animateToActiveView(activeView, discount) {
-    $(bodyScrollElement).animate({
-      scrollTop : activeView.offset().top - discount
-    }, animationTime, function() {
-    });
-  }
-
-  function goToSection(element, discount) {
-    changePageMetaData(element);
-    changePageUrl(element);
-    changeActiveMenu(element);
-    animateToActiveView(element, discount);
-  }
-
-  function changeActiveMenu(element) {
-    var activeLink = $('#navbar li a[href="#' + getSectionByView(element) + '"]');
-    $('#navbar li, #navbar li a').removeClass('active');
-    activeLink.addClass('active');
-    activeLink.closest('li').addClass('active');
-  }
-
-  /**
-   * Forces the page scroll to the active section. It uses the url path or hash
-   * to determine the current section.
-   * 
-   * @param discount(optional) - Used to reduce a parte of scroll when needed
-   */
-  function goToActiveSection(discount) {
-    if (typeof discount === 'undefined') {
-      discount = 0;
-    }
-
-    var activeView = getActiveView();
-    goToSection(activeView, discount);
-  }
-
-  /**
-   * Remove default history scroll restoration.
-   * 
-   * @see https://developers.google.com/web/updates/2015/09/history-api-scroll-restoration
-   */
-  function setScrollRestoration(val) {
-    if ('scrollRestoration' in history) {
-      history.scrollRestoration = val;
-    }
-  }
-
-  function changePageMetaDataOnScoll() {
-    // Change .view-pfe-pages to your view class.
-    var views = $('.view-ipd-facts-section-view > .view-content > .views-row');
-    $(window).on('scroll', function() {
-      if (!$(bodyScrollElement).is(':animated')) {
-        views.each(function() {
-          if (isInNewSection($(this))) {
-            changePageMetaData($(this));
-            changePageUrl($(this));
-            changeActiveMenu($(this))
-          }
-        });
-      }
-    });
-  }
-
-  function changePageMetaDataOnPopstate() {
-    $(window).on('popstate', function(e) {
-      e.preventDefault();
-      goToActiveSection(getHeaderHeight());
-    });
-  }
-
-  function changePageMetaDataOnMenuClick() {
-    $('#navbar li:not(.icon) a, .link-section a').on('click', function(e) {
-      var section = getSectionObjectByHash($(this).attr('href'));
-      var view = getViewBySection(section);
-      goToSection(view, getHeaderHeight());
-      e.preventDefault();
-    });
-  }
-
-  /**
-   * The meta datas are not used on this specific site but ples don't remove
-   * this function
-   */
-  function changePageMetaData(element) {
-    // These fields must be added in the TPL for the script to work.
     /**
-     * var title = $(element).find('.metatag-title').length > 0 ?
-     * $(element).find('.metatag-title').html() : ''; var description =
-     * $(element).find('.metatag-description').length > 0 ?
-     * $(element).find('.metatag-description').html() : '';
-     * $('title').html(title.trim());
-     * $('meta[name=description]').attr('content', description.trim());
+     * Select the right element to scroll based on webkit user agent.
+     * 
+     * @see http://harmssite.com/2013/08/jquery-animate-body-for-all-browsers/
+     * 
+     * @returns {string}
      */
-  }
+    var setBodyScrollElement = function() {
+      bodyScrollElement = (navigator.userAgent.toLowerCase().indexOf('webkit') > 0 ? 'body' : 'html');
+    }
 
-  function changePageUrl(element) {
-    var title = getSectionByView(element);
-    if (title != '' && history.pushState) {
-      var id = '#' + title;
-      var url = getSectionPathname(id);
-      var stateObj = {
-        'id' : id
-      };
-      if (history.state != null && id != history.state.id) {
-        history.pushState(stateObj, title, url);
-      }
-      else {
-        history.replaceState(stateObj, title, url);
+    /**
+     * Remove default history scroll restoration.
+     * 
+     * @see https://developers.google.com/web/updates/2015/09/history-api-scroll-restoration
+     */
+    var setScrollRestoration = function(val) {
+      if ('scrollRestoration' in history) {
+        history.scrollRestoration = val;
       }
     }
-  }
+
+    /**
+     * Splits the hash character '#' and returns only the real name of the
+     * section.
+     * 
+     * @param {string} hash - The hash to be splitted
+     * 
+     * @returns {string}
+     */
+    var getSectionByHash = function(hash) {
+      if (hash.charAt(0) == "#") {
+        hash = hash.substr(1);
+      }
+      return hash;
+    }
+
+    /**
+     * Get section name based on path.
+     * 
+     * @returns {string}
+     */
+    var getSectionByPath = function() {
+      return getSectionByHash(window.location.href);
+    }
+
+    /**
+     * Finds the section element based on path.
+     * 
+     * @param {string} hash - The section hash
+     * 
+     * @returns {jQuery object}
+     */
+    var getSectionObjectByHash = function(hash) {
+      return $("[data-" + settings.dataSectionName + "='" + getSectionByHash(hash) + "']");
+    }
+
+    /**
+     * Finds the section element based on path.
+     * 
+     * @returns {jQuery object}
+     */
+    var getSectionObjectByPath = function() {
+      return $("[data-" + settings.dataSectionName + "='" + getSectionByPath() + "']");
+    }
+
+    /**
+     * Returns the view section name
+     * 
+     * @param {jQuery object} view
+     * 
+     * @returns {string}
+     */
+    var getSectionByView = function(view) {
+      return $(view).find("[data-" + settings.dataSectionName + "]").data(settings.dataSectionName);
+    }
+
+    /**
+     * Returns the pathname and hash if it's not iqual to the last one.
+     * 
+     * @param {string} id - Section id
+     * 
+     * @returns {string}
+     */
+    var getSectionPathname = function(id) {
+      if (getSectionByView($(settings.viewsClass).first()) == id) {
+        return pathName;
+      }
+      
+      return settings.onlyHash ? pathName + '#' + id : pathName + id;
+    }
+
+    /**
+     * Returns the section view object.
+     * 
+     * @param {jQuery object=} section - The section object
+     * 
+     * @return {jQuery object}
+     */
+    var getViewBySection = function(section) {
+      if (typeof section === 'undefined') {
+        section = $('');
+      }
+
+      var view = section.closest(settings.viewsClass);
+      if (view.length < 1) {
+        view = $(settings.viewsClass).first();
+      }
+      return view;
+    }
+
+    /**
+     * Get the active view at the moment.
+     * 
+     * @return {jQuery object}
+     */
+    var getActiveView = function() {
+      var section = getSectionObjectByPath();
+      return getViewBySection(section);
+    }
+
+    /**
+     * Returns the windowScroll. Plus: discounts any configured size.
+     * 
+     * @see settings.discount
+     * 
+     * @return {number}
+     */
+    var getWindowScroll = function() {
+      return $(document).scrollTop() + settings.discount + 1;
+    }
+
+    /**
+     * Ignore section if configured.
+     * 
+     * @see settings.ignore
+     * @param {string/jQuery object} view
+     * 
+     * @return {boolean}
+     */
+    var isNotSection = function(view) {
+      // TODO not working when settings.onlyHasg = false
+      return $(view).find(settings.ignore).length > 0 ? true : false;
+    }
+
+    /**
+     * Verify if is on a new section based on scroll.
+     * 
+     * @see settings.ignore
+     * @param {string/jQuery object} view
+     * 
+     * @return {boolean}
+     */
+    var isInNewSection = function(view) {
+      var scroll = getWindowScroll();
+      var section = getSectionByView(view);
+      var top = view.offset().top;
+      var bottom = top + view.height();
+      if (scroll >= top && scroll <= bottom && section != currentSection && !isNotSection(view)) {
+        currentSection = section;
+        return true;
+      }
+      return false;
+    }
+
+    /**
+     * Animate page to the begin of the given active view.
+     * 
+     * @param {jQuery object} activeView
+     * @param {number=} discount - Used to reduce a parte of scroll when needed
+     */
+    var animateToActiveView = function(activeView, discount) {
+      $(bodyScrollElement).animate({
+        scrollTop : activeView.offset().top - discount
+      }, settings.animationTime);
+    }
+
+    /**
+     * Change the page url, metadatas and make the page animate.
+     * 
+     * @param {jQuery object} activeView
+     * @param {number=} discount - Used to reduce a parte of scroll when needed
+     */
+    var goToSection = function(activeView, discount) {
+      changePageMetaData(activeView);
+      changePageUrl(activeView);
+      animateToActiveView(activeView, discount);
+    }
+
+    /**
+     * Forces the page scroll to the active section. It uses the url path or
+     * hash to determine the current section.
+     * 
+     * @param {number=} discount - Used to reduce a parte of scroll when needed
+     */
+    var goToActiveSection = function(discount) {
+      if (typeof discount === 'undefined') {
+        discount = 0;
+      }
+
+      var activeView = getActiveView();
+      goToSection(activeView, discount);
+    }
+
+    /**
+     * Watch the page scroll to trigger section change.
+     */
+    var changePageMetaDataOnScoll = function() {
+      // Change .view-pfe-pages to your view class.
+      var views = $(viewName).find(' > .view-content > .views-row');
+      $(window).on('scroll', function() {
+        if (!$(bodyScrollElement).is(':animated')) {
+          views.each(function() {
+            if (isInNewSection($(this))) {
+              changePageMetaData($(this));
+              changePageUrl($(this));
+            }
+          });
+        }
+      });
+    }
+
+    /**
+     * Handle to the browser history back.
+     */
+    var changePageMetaDataOnPopstate = function() {
+      $(window).on('popstate', function(e) {
+        e.preventDefault();
+        goToActiveSection(0);
+      });
+    }
+
+    /**
+     * Change section on link click.
+     * 
+     * @see settings.linksSelector
+     */
+    var changePageMetaDataOnMenuClick = function() {
+      $(settings.linksSelector).on('click', function(e) {
+        var href = $(this).attr('href');
+        var section = getSectionObjectByHash(href);
+        var view = getViewBySection(section);
+        goToSection(view, settings.discount);
+        e.preventDefault();
+      });
+    }
+
+    /**
+     * Changes page metadatas. These fields must be added in the TPL for the
+     * script to work.
+     * 
+     * @param {jQuery object} activeView
+     */
+    var changePageMetaData = function(activeView) {
+      var title = $(activeView).find('.metatag-title').length > 0 ? $(activeView).find('.metatag-title').html() : '';
+      var description = $(activeView).find('.metatag-description').length > 0 ? $(activeView).find('.metatag-description').html() : '';
+      $('title').html(title.trim());
+      $('meta[name=description]').attr('content', description.trim());
+    }
+
+    /**
+     * Changes page url.
+     * 
+     * @param {jQuery object} activeView
+     */
+    var changePageUrl = function(activeView) {
+      var title = getSectionByView(activeView);
+      if (title != '' && history.pushState) {
+        var id = title;
+        var url = getSectionPathname(id);
+        var stateObj = {
+          'id' : id
+        };
+
+        if (history.state != null && id != history.state.id) {
+          history.pushState(stateObj, title, url);
+        }
+        else {
+          history.replaceState(stateObj, title, url);
+        }
+      }
+    }
+
+    var init = function(selector) {
+      viewName = selector;
+      pathName = window.location.pathname;
+
+      setScrollRestoration('manual');
+      setBodyScrollElement();
+
+      $(window).load(function() {
+        goToActiveSection(settings.discount);
+
+        // TODO setTimeout is been used to avoid the scroll hendler,
+        // before we go to some section when page loads.
+        // This was a bug on Safari IOS.
+        // See if we can remove timeout and fix it with another approach.
+        setTimeout(function() {
+          changePageMetaDataOnScoll();
+          changePageMetaDataOnPopstate();
+          changePageMetaDataOnMenuClick();
+        }, settings.animationTime);
+      });
+    };
+
+    return this.each(function() {
+      init(this);
+    });
+
+  };
 })(jQuery);

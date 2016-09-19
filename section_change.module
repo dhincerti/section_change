@@ -40,4 +40,23 @@ function section_change_preprocess_views_view(&$vars) {
 
   drupal_add_css($path_to_module . '/css/style.css');
   drupal_add_js($path_to_module . '/js/section_change.js', array('type' => 'file', 'scope' => 'footer'));
+  drupal_add_js($path_to_module . '/js/scripts.js', array('type' => 'file', 'scope' => 'footer'));
+}
+
+/**
+ * Implements hook_menu().
+ */
+function section_change_menu() {
+  $items = array();
+
+  $items['admin/config/section_change/settings'] = array(
+    'title' => 'Section Change',
+    'description' => 'Manage Section Change Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('section_change_admin_form'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'inc/section_change.admin.inc',
+  );
+
+  return $items;
 }

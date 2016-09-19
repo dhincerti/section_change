@@ -2,6 +2,7 @@ name = Section Change
 description = Changes page url, title and description based on user scroll
 core = 7.x
 package = Section Change
+configure = admin/config/section_change/settings
 dependencies[] = metatag:metatag
 dependencies[] = views:views
 dependencies[] = views_ui:views_ui
