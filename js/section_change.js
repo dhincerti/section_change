@@ -15,11 +15,11 @@
     var defaults = {
       onlyHash : false,
       dataSectionName : 'section',
-      viewsClass : '.views-row',
+      viewsSelector : '.views-row',
       animationTime : 500,
       discount : 0,
       ignore : '',
-      linksSelector : '',
+      linksSelector : ''
     };
 
     var settings = $.extend({}, defaults, options);
@@ -75,6 +75,15 @@
     }
 
     /**
+     * Get window location hash
+     * 
+     * @returns {string}
+     */
+    var getWindowHash = function() {
+      return window.location.hash;
+    }
+    
+    /**
      * Finds the section element based on path.
      * 
      * @param {string} hash - The section hash
@@ -113,10 +122,10 @@
      * @returns {string}
      */
     var getSectionPathname = function(id) {
-      if (getSectionByView($(settings.viewsClass).first()) == id) {
+      if (getSectionByView($(settings.viewsSelector).first()) == id) {
         return pathName;
       }
-      
+
       return settings.onlyHash ? pathName + '#' + id : pathName + id;
     }
 
@@ -132,9 +141,9 @@
         section = $('');
       }
 
-      var view = section.closest(settings.viewsClass);
+      var view = section.closest(settings.viewsSelector);
       if (view.length < 1) {
-        view = $(settings.viewsClass).first();
+        view = $(settings.viewsSelector).first();
       }
       return view;
     }
@@ -145,8 +154,21 @@
      * @return {jQuery object}
      */
     var getActiveView = function() {
-      var section = getSectionObjectByPath();
+      var hash = getWindowHash();
+      var section = getSectionObjectByHash(hash);
       return getViewBySection(section);
+    }
+
+    /**
+     * Get any size to be desconted on scroll events
+     */
+    var getDiscount = function() {
+      if (typeof settings.discount === "function") {
+        return settings.discount();
+      }
+      else {
+        return settings.discount;
+      }
     }
 
     /**
@@ -157,7 +179,7 @@
      * @return {number}
      */
     var getWindowScroll = function() {
-      return $(document).scrollTop() + settings.discount + 1;
+      return $(document).scrollTop() + getDiscount() + 1;
     }
 
     /**
@@ -197,11 +219,10 @@
      * Animate page to the begin of the given active view.
      * 
      * @param {jQuery object} activeView
-     * @param {number=} discount - Used to reduce a parte of scroll when needed
      */
-    var animateToActiveView = function(activeView, discount) {
+    var animateToActiveView = function(activeView) {
       $(bodyScrollElement).animate({
-        scrollTop : activeView.offset().top - discount
+        scrollTop : activeView.offset().top - getDiscount()
       }, settings.animationTime);
     }
 
@@ -209,27 +230,40 @@
      * Change the page url, metadatas and make the page animate.
      * 
      * @param {jQuery object} activeView
-     * @param {number=} discount - Used to reduce a parte of scroll when needed
      */
-    var goToSection = function(activeView, discount) {
+    var goToSection = function(activeView) {
       changePageMetaData(activeView);
       changePageUrl(activeView);
-      animateToActiveView(activeView, discount);
+      animateToActiveView(activeView);
     }
 
     /**
      * Forces the page scroll to the active section. It uses the url path or
      * hash to determine the current section.
      * 
-     * @param {number=} discount - Used to reduce a parte of scroll when needed
      */
-    var goToActiveSection = function(discount) {
-      if (typeof discount === 'undefined') {
-        discount = 0;
-      }
-
+    var goToActiveSection = function() {
       var activeView = getActiveView();
-      goToSection(activeView, discount);
+      goToSection(activeView);
+    }
+    
+    /**
+     * Watch the page load to trigger initial section change.
+     */
+    var changePageMetaDataOnLoad = function() {
+      $(window).load(function() {
+        goToActiveSection();
+
+        // TODO setTimeout is been used to avoid the scroll hendler,
+        // before we go to some section when page loads.
+        // This was a bug on Safari IOS.
+        // See if we can remove timeout and fix it with another approach.
+        setTimeout(function() {
+          changePageMetaDataOnScoll();
+          changePageMetaDataOnPopstate();
+          changePageMetaDataOnLinkClick();
+        }, settings.animationTime);
+      });
     }
 
     /**
@@ -256,7 +290,7 @@
     var changePageMetaDataOnPopstate = function() {
       $(window).on('popstate', function(e) {
         e.preventDefault();
-        goToActiveSection(0);
+        goToActiveSection();
       });
     }
 
@@ -265,12 +299,12 @@
      * 
      * @see settings.linksSelector
      */
-    var changePageMetaDataOnMenuClick = function() {
+    var changePageMetaDataOnLinkClick = function() {
       $(settings.linksSelector).on('click', function(e) {
         var href = $(this).attr('href');
         var section = getSectionObjectByHash(href);
         var view = getViewBySection(section);
-        goToSection(view, settings.discount);
+        goToSection(view);
         e.preventDefault();
       });
     }
@@ -317,20 +351,8 @@
 
       setScrollRestoration('manual');
       setBodyScrollElement();
-
-      $(window).load(function() {
-        goToActiveSection(settings.discount);
-
-        // TODO setTimeout is been used to avoid the scroll hendler,
-        // before we go to some section when page loads.
-        // This was a bug on Safari IOS.
-        // See if we can remove timeout and fix it with another approach.
-        setTimeout(function() {
-          changePageMetaDataOnScoll();
-          changePageMetaDataOnPopstate();
-          changePageMetaDataOnMenuClick();
-        }, settings.animationTime);
-      });
+      
+      changePageMetaDataOnLoad();
     };
 
     return this.each(function() {
