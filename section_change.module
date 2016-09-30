@@ -41,6 +41,7 @@ function section_change_preprocess_views_view(&$vars) {
   drupal_add_css($path_to_module . '/css/style.css');
   drupal_add_js($path_to_module . '/js/section_change.js', array('type' => 'file', 'scope' => 'footer'));
   drupal_add_js($path_to_module . '/js/scripts.js', array('type' => 'file', 'scope' => 'footer'));
+  drupal_add_js(array('section_change' => section_change_javascript_settings()), 'setting');
 }
 
 /**
@@ -59,4 +60,21 @@ function section_change_menu() {
   );
 
   return $items;
+}
+
+function section_change_javascript_settings() {
+  $options = array(
+    'view_selector' => variable_get('section_change_view_selector'),
+    'plugin_options' => array(
+      'onlyHash' => variable_get('section_change_only_hash'),
+      'dataSectionName' => variable_get('section_change_data_section_name'),
+      'viewsRowSelector' => variable_get('section_change_views_row_selector'),
+      'animationTime' => variable_get('section_change_animation_time'),
+      'discount' => 0,
+      'ignore' => variable_get('section_change_ignore'),
+      'linksSelector' => variable_get('section_change_links_selector')
+    )
+  );
+
+  return $options;
 }

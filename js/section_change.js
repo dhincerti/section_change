@@ -15,7 +15,7 @@
     var defaults = {
       onlyHash : false,
       dataSectionName : 'section',
-      viewsSelector : '.views-row',
+      viewsRowSelector : '.views-row',
       animationTime : 500,
       discount : 0,
       ignore : '',
@@ -122,7 +122,7 @@
      * @returns {string}
      */
     var getSectionPathname = function(id) {
-      if (getSectionByView($(settings.viewsSelector).first()) == id) {
+      if (getSectionByView($(settings.viewsRowSelector).first()) == id) {
         return pathName;
       }
 
@@ -141,9 +141,9 @@
         section = $('');
       }
 
-      var view = section.closest(settings.viewsSelector);
+      var view = section.closest(settings.viewsRowSelector);
       if (view.length < 1) {
-        view = $(settings.viewsSelector).first();
+        view = $(settings.viewsRowSelector).first();
       }
       return view;
     }

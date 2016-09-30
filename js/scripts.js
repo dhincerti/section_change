@@ -1,11 +1,5 @@
 (function($) {
   $(document).ready(function() {
-    $('.view-section-change').sectionChange({
-      onlyHash : false,
-      linksSelector : '.linkTest',
-      discount : function() {
-        return $('#admin-menu-wrapper').outerHeight();
-      }
-    });
+    $(Drupal.settings.section_change.view_selector).sectionChange(Drupal.settings.section_change.plugin_options);
   });
 })(jQuery);
