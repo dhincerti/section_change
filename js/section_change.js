@@ -5,27 +5,23 @@
  */
 
 (function($) {
-  /**
-   * If you are getting this script to use in another project, see
-   * views-view-fields.tpl.php and template.php for info about the classes used.
-   */
 
   $.fn.sectionChange = function(options) {
 
     var defaults = {
-      onlyHash : false,
-      dataSectionName : 'section',
-      viewsRowSelector : '.views-row',
       animationTime : 500,
+      dataSectionName : 'section',
       discount : 0,
       ignore : '',
-      linksSelector : ''
+      linksSelector : '',
+      onlyHash : false,
+      rowTitle : '.title',
+      rowDescription : '.description',
+      sectionRowSelector : '.row'
     };
 
     var settings = $.extend({}, defaults, options);
-    var viewName = '';
-    var pathName = '';
-    var currentSection = '';
+    var sectionsContainer, pathName, currentSection = '';
     var bodyScrollElement = 'html, body';
 
     /**
@@ -82,7 +78,7 @@
     var getWindowHash = function() {
       return window.location.hash;
     }
-    
+
     /**
      * Finds the section element based on path.
      * 
@@ -104,25 +100,25 @@
     }
 
     /**
-     * Returns the view section name
+     * Returns the section name
      * 
-     * @param {jQuery object} view
+     * @param {jQuery object} row
      * 
      * @returns {string}
      */
-    var getSectionByView = function(view) {
-      return $(view).find("[data-" + settings.dataSectionName + "]").data(settings.dataSectionName);
+    var getSectionByRow = function(row) {
+      return $(row).find("[data-" + settings.dataSectionName + "]").data(settings.dataSectionName);
     }
 
     /**
-     * Returns the pathname and hash if it's not iqual to the last one.
+     * Returns the pathname and hash.
      * 
      * @param {string} id - Section id
      * 
      * @returns {string}
      */
     var getSectionPathname = function(id) {
-      if (getSectionByView($(settings.viewsRowSelector).first()) == id) {
+      if (getSectionByRow($(settings.sectionRowSelector).first()) == id) {
         return pathName;
       }
 
@@ -130,49 +126,62 @@
     }
 
     /**
-     * Returns the section view object.
+     * Returns the section row object.
      * 
-     * @param {jQuery object=} section - The section object
+     * @param {jQuery object} section - The section object
      * 
      * @return {jQuery object}
      */
-    var getViewBySection = function(section) {
+    var getRowBySection = function(section) {
       if (typeof section === 'undefined') {
         section = $('');
       }
 
-      var view = section.closest(settings.viewsRowSelector);
-      if (view.length < 1) {
-        view = $(settings.viewsRowSelector).first();
+      var row = section.closest(settings.sectionRowSelector);
+      if (row.length < 1) {
+        row = $(settings.sectionRowSelector).first();
       }
-      return view;
+      return row;
     }
 
     /**
-     * Get the active view at the moment.
+     * Get the active row.
      * 
      * @return {jQuery object}
      */
-    var getActiveView = function() {
+    var getActiveRow = function() {
       var hash = getWindowHash();
       var section = getSectionObjectByHash(hash);
-      return getViewBySection(section);
+      return getRowBySection(section);
     }
 
     /**
      * Get any size to be desconted on scroll events
      */
     var getDiscount = function() {
-      if (typeof settings.discount === "function") {
-        return settings.discount();
-      }
-      else {
-        return settings.discount;
+      switch (typeof settings.discount) {
+        case 'function':
+          return settings.discount();
+        break;
+
+        case 'string':
+          if (isNaN(parseInt(settings.discount))) {
+            return 0;
+          }
+          return parseInt(settings.discount);
+        break;
+
+        case 'number':
+          return settings.discount;
+        break;
+
+        default:
+          return 0;
       }
     }
 
     /**
-     * Returns the windowScroll. Plus: discounts any configured size.
+     * Returns the windowScroll plus any configured discount size.
      * 
      * @see settings.discount
      * 
@@ -190,9 +199,9 @@
      * 
      * @return {boolean}
      */
-    var isNotSection = function(view) {
+    var isNotSection = function(row) {
       // TODO not working when settings.onlyHasg = false
-      return $(view).find(settings.ignore).length > 0 ? true : false;
+      return $(row).is(settings.ignore);
     }
 
     /**
@@ -203,12 +212,12 @@
      * 
      * @return {boolean}
      */
-    var isInNewSection = function(view) {
+    var isInNewSection = function(row) {
       var scroll = getWindowScroll();
-      var section = getSectionByView(view);
-      var top = view.offset().top;
-      var bottom = top + view.height();
-      if (scroll >= top && scroll <= bottom && section != currentSection && !isNotSection(view)) {
+      var section = getSectionByRow(row);
+      var top = row.offset().top;
+      var bottom = top + row.height();
+      if (scroll >= top && scroll <= bottom && section != currentSection && !isNotSection(row)) {
         currentSection = section;
         return true;
       }
@@ -216,25 +225,36 @@
     }
 
     /**
-     * Animate page to the begin of the given active view.
+     * Trigger the sc.changed custom event
      * 
-     * @param {jQuery object} activeView
+     * @param {string/jQuery object} row
      */
-    var animateToActiveView = function(activeView) {
+    var triggerChangedEvent = function(row) {
+      var event = $.Event('sc.changed');
+      event.relatedTarget = row;
+      $(sectionsContainer).trigger(event);
+    }
+
+    /**
+     * Animate page to the begin of the given row.
+     * 
+     * @param {jQuery object} row
+     */
+    var animateToSection = function(row) {
       $(bodyScrollElement).animate({
-        scrollTop : activeView.offset().top - getDiscount()
+        scrollTop : row.offset().top - getDiscount()
       }, settings.animationTime);
     }
 
     /**
      * Change the page url, metadatas and make the page animate.
      * 
-     * @param {jQuery object} activeView
+     * @param {jQuery object} row
      */
-    var goToSection = function(activeView) {
-      changePageMetaData(activeView);
-      changePageUrl(activeView);
-      animateToActiveView(activeView);
+    var goToSection = function(row) {
+      changePageMetaData(row);
+      changePageUrl(row);
+      animateToSection(row);
     }
 
     /**
@@ -243,10 +263,10 @@
      * 
      */
     var goToActiveSection = function() {
-      var activeView = getActiveView();
-      goToSection(activeView);
+      var row = getActiveRow();
+      goToSection(row);
     }
-    
+
     /**
      * Watch the page load to trigger initial section change.
      */
@@ -270,14 +290,16 @@
      * Watch the page scroll to trigger section change.
      */
     var changePageMetaDataOnScoll = function() {
-      // Change .view-pfe-pages to your view class.
-      var views = $(viewName).find(' > .view-content > .views-row');
+      var rows = $(sectionsContainer).find(settings.sectionRowSelector);
+
       $(window).on('scroll', function() {
         if (!$(bodyScrollElement).is(':animated')) {
-          views.each(function() {
-            if (isInNewSection($(this))) {
-              changePageMetaData($(this));
-              changePageUrl($(this));
+          rows.each(function() {
+            var row = $(this);
+
+            if (isInNewSection(row)) {
+              changePageMetaData(row);
+              changePageUrl(row);
             }
           });
         }
@@ -303,21 +325,22 @@
       $(settings.linksSelector).on('click', function(e) {
         var href = $(this).attr('href');
         var section = getSectionObjectByHash(href);
-        var view = getViewBySection(section);
-        goToSection(view);
+        var row = getRowBySection(section);
+
+        goToSection(row);
         e.preventDefault();
       });
     }
 
     /**
-     * Changes page metadatas. These fields must be added in the TPL for the
-     * script to work.
+     * Changes page metadatas.
      * 
-     * @param {jQuery object} activeView
+     * @param {jQuery object} row
      */
-    var changePageMetaData = function(activeView) {
-      var title = $(activeView).find('.metatag-title').length > 0 ? $(activeView).find('.metatag-title').html() : '';
-      var description = $(activeView).find('.metatag-description').length > 0 ? $(activeView).find('.metatag-description').html() : '';
+    var changePageMetaData = function(row) {
+      var title = $(row).find(settings.rowTitle).length > 0 ? $(row).find(settings.rowTitle).html() : '';
+      var description = $(row).find(settings.rowDescription).length > 0 ? $(row).find(settings.rowDescription).html() : '';
+
       $('title').html(title.trim());
       $('meta[name=description]').attr('content', description.trim());
     }
@@ -325,39 +348,38 @@
     /**
      * Changes page url.
      * 
-     * @param {jQuery object} activeView
+     * @param {jQuery object} row
      */
-    var changePageUrl = function(activeView) {
-      var title = getSectionByView(activeView);
-      if (title != '' && history.pushState) {
-        var id = title;
-        var url = getSectionPathname(id);
+    var changePageUrl = function(row) {
+      var sectionName = getSectionByRow(row);
+      if (sectionName != '' && history.pushState) {
+        var url = getSectionPathname(sectionName);
         var stateObj = {
-          'id' : id
+          'id' : sectionName
         };
 
-        if (history.state != null && id != history.state.id) {
-          history.pushState(stateObj, title, url);
+        if (history.state != null && sectionName != history.state.id) {
+          history.pushState(stateObj, sectionName, url);
+          triggerChangedEvent(row);
         }
         else {
-          history.replaceState(stateObj, title, url);
+          history.replaceState(stateObj, sectionName, url);
         }
       }
     }
 
     var init = function(selector) {
-      viewName = selector;
+      sectionsContainer = selector;
       pathName = window.location.pathname;
 
       setScrollRestoration('manual');
       setBodyScrollElement();
-      
+
       changePageMetaDataOnLoad();
     };
 
     return this.each(function() {
       init(this);
     });
-
   };
 })(jQuery);
