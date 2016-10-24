@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Section Change (Defautl Exemple)</title>
+</head>
+<body>
+  <script type="text/javascript" src="../js/jquery-3.1.1.min.js"></script>
+  <script type="text/javascript" src="../js/section_change.js"></script>
+  <script type="text/javascript">
+      (function($) {
+        $(window).on('load', function() {
+          $('#section-change').sectionChange();
+        });
+        
+        $(document).ready(function(){
+          $('#section-change').on("sc.changed", function(e) {
+            console.log(e.relatedTarget);
+          });
+        });
+      })(jQuery);
+    </script>
+  <div id="section-change">
+    <div class="row row-1">
+      <div class="section" data-section="section-1">
+        <div class="title">Section 1</div>
+        <div class="body">
+          <img alt="image-1" src="images/image-1.jpg">
+        </div>
+        <div class="meta-data" style="display: none;">
+          <div class="title">Title: Section 1</div>
+          <div class="description">Description: Section 1</div>
+        </div>
+      </div>
+    </div>
+    <div class="row row-2">
+      <div class="section" data-section="section-2">
+        <div class="title">Section 2</div>
+        <div class="body">
+          <img alt="image-2" src="images/image-2.jpg">
+        </div>
+        <div class="meta-data" style="display: none;">
+          <div class="title">Title: Section 2</div>
+          <div class="description">Description: Section 2</div>
+        </div>
+      </div>
+    </div>
+    <div class="row row-3">
+      <div class="section" data-section="section-3">
+        <div class="title">Section 3</div>
+        <div class="body">
+          <img alt="image-3" src="images/image-3.jpg">
+        </div>
+        <div class="meta-data" style="display: none;">
+          <div class="title">Title: Section 3</div>
+          <div class="description">Description: Section 3</div>
+        </div>
+      </div>
+    </div>
+    <div class="row row-4">
+      <div class="section" data-section="section-4">
+        <div class="title">Section 4</div>
+        <div class="body">
+          <img alt="image-4" src="images/image-4.jpg">
+        </div>
+        <div class="meta-data" style="display: none;">
+          <div class="title">Title: Section 4</div>
+          <div class="description">Description: Section 4</div>
+        </div>
+      </div>
+    </div>
+    <div class="row row-5">
+      <div class="section" data-section="section-5">
+        <div class="title">Section 5</div>
+        <div class="body">
+          <img alt="image-5" src="images/image-5.jpg">
+        </div>
+        <div class="meta-data" style="display: none;">
+          <div class="title">Title: Section 5</div>
+          <div class="description">Description: Section 5</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

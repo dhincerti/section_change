@@ -14,7 +14,7 @@
       discount : 0,
       ignore : '',
       linksSelector : '',
-      onlyHash : false,
+      changePath : false,
       rowTitle : '.title',
       rowDescription : '.description',
       sectionRowSelector : '.row'
@@ -122,7 +122,7 @@
         return pathName;
       }
 
-      return settings.onlyHash ? pathName + '#' + id : pathName + id;
+      return settings.changePath == false ? pathName + '#' + id : pathName + id;
     }
 
     /**
@@ -271,19 +271,17 @@
      * Watch the page load to trigger initial section change.
      */
     var changePageMetaDataOnLoad = function() {
-      $(window).load(function() {
-        goToActiveSection();
+      goToActiveSection();
 
-        // TODO setTimeout is been used to avoid the scroll hendler,
-        // before we go to some section when page loads.
-        // This was a bug on Safari IOS.
-        // See if we can remove timeout and fix it with another approach.
-        setTimeout(function() {
-          changePageMetaDataOnScoll();
-          changePageMetaDataOnPopstate();
-          changePageMetaDataOnLinkClick();
-        }, settings.animationTime);
-      });
+      // TODO setTimeout is been used to avoid the scroll hendler,
+      // before we go to some section when page loads.
+      // This was a bug on Safari IOS.
+      // See if we can remove timeout and fix it with another approach.
+      setTimeout(function() {
+        changePageMetaDataOnScoll();
+        changePageMetaDataOnPopstate();
+        changePageMetaDataOnLinkClick();
+      }, settings.animationTime);
     }
 
     /**
@@ -331,6 +329,15 @@
         e.preventDefault();
       });
     }
+    
+    /**
+     * Set up meta tags if don't already exists
+     */
+    var addMetaTags = function() {
+      if ($('title').length == 0) {
+        $('head').append('title');
+      }
+    };
 
     /**
      * Changes page metadatas.
@@ -338,6 +345,8 @@
      * @param {jQuery object} row
      */
     var changePageMetaData = function(row) {
+      addMetaTags();
+      
       var title = $(row).find(settings.rowTitle).length > 0 ? $(row).find(settings.rowTitle).html() : '';
       var description = $(row).find(settings.rowDescription).length > 0 ? $(row).find(settings.rowDescription).html() : '';
 
