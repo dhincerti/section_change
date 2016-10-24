@@ -81,7 +81,7 @@ To accomplish the metadata changes, create inside of each section, an empty div 
 
 ### Usage
 
-Use the .sectionChange() function to trigger the plugin on your sections main container. Make sure to use the window load function to prevent the script to be executed before the rest of the content has being created.
+Use the .sectionChange() function to trigger the plugin on your sections main container. Make sure to use the window load event to prevent the script to be executed before the rest of the content has being created.
 
 ```javascript
 $(window).on('load', function() {
@@ -94,11 +94,11 @@ $(window).on('load', function() {
 | Name               |  Type   | Default Value  | Description       |
 | :----------------- |:-------:|:--------------:| -----------------:|
 | animationTime      | number  | 500            | The animation time |
-| changePath         | boolean | false          | If setted to true, the plugin will change the path instead of hash. In order to the initial loading of the page work properly, you will need to create by your own, the redirects pointing to the main url plus hash. Ex: http://www.site.com/section-1 > http://www.site.com/#section-1 |
+| changePath         | boolean | false          | If setted to true, the plugin will change the path instead of hash. In order to the initial loading of the page work properly, you will need to create by your own, the redirects pointing to the main url plus hash. `Ex: http://www.site.com/section-1 > http://www.site.com/#section-1` |
 | dataSectionName    | string  | "section"      | Define the data name to be find inside the section row |
 | discount           | string, number, function | 0              | Sets a discount to be calculated to the section top position. Usually used with fixed menu. If setted as function, make sure to return a numeric value. |
 | ignore             | string  | ""             | The section row selector to be ignored. |
-| linksSelector      | string  | ""             | The selector of any anchor to the sections. Ex: if you have a link like <a id="anchor" href="#section-1">, set this option to "#anchor".  |
+| linksSelector      | string  | ""             | The selector of any anchor to the sections. Ex: if you have a link like `<a id="anchor" href="#section-1">`, set this option to `"#anchor"`.  |
 | rowDescription     | string  | ".description" | The selector where the section description is defined. |
 | rowTitle           | string  | ".title"       | The selector where the section title is defined. |
 | sectionRowSelector | string  | ".row"         | The section row selector. |
